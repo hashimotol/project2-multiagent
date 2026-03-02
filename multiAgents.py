@@ -68,7 +68,7 @@ class ReflexAgent(Agent):
         """
         # Useful information you can extract from a GameState (pacman.py)
         successorGameState = currentGameState.generatePacmanSuccessor(action)
-        newPos = successorGameState.getPacmanPosition()
+        pacmanPos = successorGameState.getPacmanPosition()
         newFood = successorGameState.getFood()
         newGhostStates = successorGameState.getGhostStates()
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
@@ -78,10 +78,9 @@ class ReflexAgent(Agent):
 
         foodList = newFood.asList()
         if foodList:
-            minFoodDistance = min([manhattanDistance(newPos, food) for food in foodList])
-            score += 1.0 / (minFoodDistance + 1)
+            score += sum(1.0 / manhattanDistance(pacmanPos, food) for food in foodList)
 
-        ghostDistances = [manhattanDistance(newPos, ghost.getPosition()) for ghost in newGhostStates]
+        ghostDistances = [manhattanDistance(pacmanPos, ghost.getPosition()) for ghost in newGhostStates]
         for i, ghostDistance in enumerate(ghostDistances):
             if newScaredTimes[i] == 0 and ghostDistance > 0:
                 score -= 1.0 / ghostDistance
@@ -343,7 +342,35 @@ def betterEvaluationFunction(currentGameState):
     DESCRIPTION: <write something here so we know what you did>
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    if currentGameState.isWin():
+        return float('inf')
+    if currentGameState.isLose():
+        return float('-inf')
+
+    score = currentGameState.getScore()
+    pacmanPos = currentGameState.getPacmanPosition()
+
+    foodList = currentGameState.getFood().asList()
+
+
+    if foodList:
+        score += sum(2.0 / manhattanDistance(pacmanPos, food) for food in foodList)
+
+    capsules = currentGameState.getCapsules()
+    score -= 20 * len(capsules)  
+
+    for ghost in currentGameState.getGhostStates():
+        dist = manhattanDistance(pacmanPos, ghost.getPosition())
+
+        if ghost.scaredTimer > 0:
+            score += 200.0 / (dist + 1)
+        else:
+            if dist <= 1:
+                score -= 400
+            else:
+                score -= 10.0 / dist
+
+    return score
 
 # Abbreviation
 better = betterEvaluationFunction
